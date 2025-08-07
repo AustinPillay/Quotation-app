@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quotation Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f2f2f2;
+    }
+    h1 {
+      text-align: center;
+    }
+    label, input, button {
+      display: block;
+      margin: 10px 0;
+    }
+    input {
+      padding: 8px;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    .btn {
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Quotation Generator</h1>
+
+  <label>Client Name</label>
+  <input type="text" id="clientName" placeholder="e.g. John Doe" />
+
+  <label>Client Cell Number</label>
+  <input type="text" id="clientCell" placeholder="e.g. 083 631 3038" />
+
+  <label>Site Address</label>
+  <input type="text" id="siteAddress" placeholder="e.g. 44 Longwoods Drive" />
+
+  <label>Quotation Date</label>
+  <input type="date" id="quotationDate" />
+
+  <label>Item Description</label>
+  <input type="text" id="description" placeholder="e.g. Kitchen Cupboard" />
+
+  <label>Quantity</label>
+  <input type="number" id="quantity" placeholder="e.g. 2" />
+
+  <label>Rate</label>
+  <input type="number" id="rate" placeholder="e.g. 1500" />
+
+  <button class="btn" onclick="addItem()">Add Item</button>
+
+  <table id="itemsTable">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Total: R<span id="grandTotal">0</span></h3>
+
+  <button class="btn" onclick="generatePDF()">Download Quotation PDF</button>
+
+  <script>
+    let items = [];
+
+    function addItem() {
+      const description = document.getElementById("description").value;
+      const quantity = parseInt(document.getElementById("quantity").value);
+      const rate = parseFloat(document.getElementById("rate").value);
+
+      if (!description || isNaN(quantity) || isNaN(rate) || quantity <= 0 || rate <= 0) {
+        alert("Please fill all fields with valid values");
+        return;
+      }
+
+      const total = quantity * rate;
+      items.push({ description, quantity, rate, total });
+      updateTable();
+    }
+
+    function updateTable() {
+      const tbody = document.querySelector("#itemsTable tbody");
+      tbody.innerHTML = "";
+      let grandTotal = 0;
+
+      items.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.description}</td>
+          <td>${item.quantity}</td>
+          <td>R${item.rate.toFixed(2)}</td>
+          <td>R${item.total.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+        grandTotal += item.total;
+      });
+
+      document.getElementById("grandTotal").innerText = grandTotal.toFixed(2);
+    }
+
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // --- Company Header ---
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 123, 255);
+      doc.text("Professional Touch Construction cc", 20, 20);
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0,0,0);
+      doc.text("T/a Professional Touch Granite/Cupboards", 20, 28);
+      doc.text("CK NO : 2007/084510/23", 20, 34);
+      doc.text("VAT NO: 4760283772", 20, 40);
+
+      doc.text("46 Stonemanor, Trenance manor Phoenix", 120, 28);
+      doc.text("Tel no: 031 572 7514", 120, 34);
+      doc.text("Cell no: 083 290 0807", 120, 40);
+      doc.text("Email: trevor.protouch@gmail.com", 120, 46);
+
+      // Draw a line under header
+      doc.setDrawColor(0,123,255);
+      doc.setLineWidth(0.7);
+      doc.line(20, 50, 190, 50);
+
+      // --- Client Info ---
+      let y = 58;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Quotation Details", 20, y);
+      doc.setFont("helvetica", "normal");
+      y += 8;
+      const clientName = document.getElementById("clientName").value || "Edwin";
+      const clientCell = document.getElementById("clientCell").value || "083 631 3038";
+      const siteAddress = document.getElementById("siteAddress").value || "44 Longwoods Drive";
+      const quotationDate = document.getElementById("quotationDate").value || new Date().toLocaleDateString();
+
+      doc.text(`Date: ${quotationDate}`, 20, y);
+      doc.text(`Client: ${clientName}`, 20, y + 6);
+      doc.text(`Cell no: ${clientCell}`, 20, y + 12);
+      doc.text(`Site: ${siteAddress}`, 20, y + 18);
+
+      // --- Subject and Intro ---
+      y += 30;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 123, 255);
+      doc.text("Re: Quotation on Cupboards / Quartz", 20, y);
+      doc.setTextColor(0,0,0);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Sir/Madam", 20, y);
+      y += 6;
+      doc.text("Thank you for your request to supply and fit cupboards. We would like to confirm the following before your order is processed.", 20, y, { maxWidth: 170 });
+
+      // --- Job Specification ---
+      y += 14;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 123, 255);
+      doc.text("Job Specification: Cupboards and countertops", 20, y);
+      doc.setTextColor(0,0,0);
+      y += 8;
+
+      // --- Table Header Styling ---
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setFillColor(0, 123, 255);
+      doc.rect(20, y, 170, 8, "F");
+      doc.setTextColor(255,255,255);
+      doc.text("Description", 22, y + 6);
+      doc.text("Qty", 90, y + 6);
+      doc.text("Rate", 120, y + 6);
+      doc.text("Total", 160, y + 6);
+      doc.setTextColor(0,0,0);
+      y += 12;
+
+      // --- Table Rows ---
+      doc.setFont("helvetica", "normal");
+      items.forEach(item => {
+        doc.text(`${item.description}`, 22, y);
+        doc.text(`${item.quantity}`, 90, y);
+        doc.text(`R${item.rate.toFixed(2)}`, 120, y);
+        doc.text(`R${item.total.toFixed(2)}`, 160, y);
+        y += 8;
+      });
+
+      // --- Totals Styling ---
+      y += 8;
+      let grandTotal = items.reduce((sum, item) => sum + item.total, 0);
+      let vat = grandTotal * 0.15;
+      let totalWithVat = grandTotal + vat;
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0,123,255);
+      doc.text(`TOTAL: R${grandTotal.toFixed(2)}`, 120, y);
+      y += 8;
+      doc.text(`TOTAL + VAT: R${totalWithVat.toFixed(2)}`, 120, y);
+      doc.setTextColor(0,0,0);
+
+      // --- NEW PAGE FOR TERMS AND BELOW ---
+      doc.addPage();
+      let y2 = 20;
+
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 123, 255);
+      doc.text("Terms and Conditions of Service", 20, y2);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0,0,0);
+      y2 += 8;
+      doc.text("Professional Touch Construction CC", 20, y2);
+      y2 += 6;
+      doc.text("CK NO: 2007/084510/23", 20, y2);
+
+      y2 += 10;
+      // Condensed terms for fitting on one page
+      const termsCondensed = [
+        "1. Quotation valid for 30 days. Pricing may change after this period.",
+        "2. Scope: Based on discussed work. Changes require written order and may affect cost/timeline.",
+        "3. Payment: 70% non-refundable deposit to start. 30% balance on completion. Late payment incurs 10% monthly interest.",
+        "4. Ownership: Goods remain property of PTCC until fully paid.",
+        "5. Site: Client must provide safe, clear access. Delays may incur extra charges.",
+        "6. Delays: Not liable for delays due to strikes, weather, shortages, or force majeure.",
+        "7. Client: Responsible for measurements, appliances, site prep. Extra fees if site/appliances not ready.",
+        "8. Warranty: 12-month limited on workmanship. Excludes water damage, neglect, movement, or client changes. Manufacturer warranties passed to client.",
+        "9. Materials: Natural variations are not defects. Substitutions only with client approval.",
+        "10. Joins/Cut-Outs: At company discretion unless agreed. Off-cuts left on site unless requested.",
+        "11. Construction: Work to spec/regulations. Not liable for existing defects. Third-party approvals by client.",
+        "12. Plumbing/Electrical: Qualified staff. Hidden faults/alterations may cost extra. Not liable for existing faults.",
+        "13. Safety: Site must be hazard-free. Work may be suspended if unsafe.",
+        "14. Cancellation: No cancellation after fabrication starts. Deposits non-refundable after material order.",
+        "15. Insurance: Client must insure property. PTCC not liable for belongings left in workspace.",
+        "16. Completion: Snag list signed off. Final payment due after resolution. Non-payment may lead to legal action.",
+        "17. Disputes: Submit in writing within 7 days. Mediation/arbitration before legal action."
+      ];
+
+      termsCondensed.forEach((term, i) => {
+        doc.text(term, 20, y2);
+        y2 += 7;
+      });
+
+      // --- Signature Block and Banking Details Styling ---
+      y2 += 10;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 123, 255);
+      doc.text("Banking Details", 20, y2);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0,0,0);
+      doc.text("Professional Touch Construction cc", 20, y2 + 8);
+      doc.text("Standard Bank", 20, y2 + 14);
+      doc.text("Cheque account: 022214402", 20, y2 + 20);
+      doc.text("Branch no: 042826", 20, y2 + 26);
+
+      y2 += 40;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 123, 255);
+      doc.text("Thank you", 20, y2);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0,0,0);
+      doc.text("Regards,", 20, y2 + 6);
+      doc.text("Trevor Pillay, Director", 20, y2 + 12);
+      doc.text("083 2900 807 | Tel: 031 572 7514", 20, y2 + 18);
+      doc.text("email: trevor.protouch@gmail.com", 20, y2 + 24);
+
+      doc.save("quotation.pdf");
+    }
+  </script>
+</body>
+</html>
